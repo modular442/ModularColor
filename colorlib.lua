@@ -69,7 +69,10 @@ end
 ---@param self Color
 ---@return string @ Hex string like '#FFA500'
 function COLOR:ToHex()
-    return string.format('#%02X%02X%02X', self.r, self.g, self.b)
+    local r = math.floor(self.r + 0.5)
+    local g = math.floor(self.g + 0.5)
+    local b = math.floor(self.b + 0.5)
+    return string.format('#%02X%02X%02X', r, g, b)
 end
 
 ---Creates a Color object from hex string like '#FFA500' or '#FA0'
@@ -175,8 +178,30 @@ end
 function MsgC(color, styles, txt, ...)
     -- Shift args if styles param omitted (string passed)
     if type(styles) == 'string' then
-        txt = styles
+        local formatStr = styles
+        local formatArgs = {txt, ...}
+
         styles = nil
+        txt = nil
+
+        local text
+        if #formatArgs > 0 then
+            text = string.format(formatStr, table.unpack(formatArgs))
+        else
+            text = formatStr
+        end
+
+        local prefix = ''
+        if IsColor(color) then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            prefix = ToANSI(color)
+        elseif type(color) == 'string' then
+            prefix = color
+        end
+
+        local style_codes = ToANSIStyles(styles)
+        io.write(prefix .. style_codes .. text .. ResetANSI() .. '\n')
+        return
     end
 
     if styles ~= nil and type(styles) ~= 'table' then
@@ -194,7 +219,12 @@ function MsgC(color, styles, txt, ...)
     end
 
     local style_codes = ToANSIStyles(styles)
-    local text = string.format(txt or '', ...)
+    local text
+    if select('#', ...) > 0 then
+        text = string.format(txt or '', ...)
+    else
+        text = txt or ''
+    end
 
     -- Compose and print, reset styles after
     io.write(prefix..style_codes..text..ResetANSI()..'\n')
