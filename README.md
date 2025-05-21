@@ -1,7 +1,9 @@
 # ModularColor (English README)
 
 > 🎨 Modular color library for Lua — clean RGBA goodness!
+>
 > Author: **modular442** — head honcho of Modular Content
+>
 > 🚀 Plug in, write colorful code, live boldly!
 
 ---
