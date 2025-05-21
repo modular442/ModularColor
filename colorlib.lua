@@ -1,5 +1,7 @@
----© 2025 modular442 (Modular Content). Unauthorized copying or distribution is prohibited by law.
----© 2025 modular442 (Modular Content). Несанкционированное копирование или распространение запрещены законом.
+--[[
+    © 2025 modular442 (Modular Content).
+    Unauthorized copying or distribution is prohibited by law.
+    Несанкционированное копирование или распространение запрещено законом. --]]
 
 ---@class Color
 ---@field r number @ Red component (0-255)
