@@ -172,64 +172,46 @@ function ResetANSI()
     return styles_codes.reset
 end
 
----Prints colored and styled text to terminal using ANSI codes
----@param color Color|string @ Color object or ANSI color string
----@param styles table|string? @ Table of styles, e.g. {bold=true, underline=true} or directly string with text if styles omitted
----@param txt string? @ Format string (if styles is table)
----@vararg any? @ Arguments for string.format
-function MsgC(color, styles, txt, ...)
-    -- Shift args if styles param omitted (string passed)
-    if type(styles) == 'string' then
-        local formatStr = styles
-        local formatArgs = {txt, ...}
+---Enhanced MsgC that supports multiple colors and format strings in sequence
+---@vararg any @ Accepts any number of Color/string/style/format/args in sequence
+function MsgC(...)
+    local args = {...}
+    local output = {}
+    local currentColor = ''
+    local currentStyles = ''
+    local reset = ResetANSI()
 
-        styles = nil
-        txt = nil
+    local i = 1
+    while i <= #args do
+        local v = args[i]
+        
+        if IsColor(v) then
+            currentColor = ToANSI(v)
+            i = i + 1
+        elseif type(v) == 'table' then
+            currentStyles = ToANSIStyles(v)
+            i = i + 1
+        elseif type(v) == 'string' then
+            -- Try to match format string
+            local numSpecifiers = select(2, v:gsub('%%[^%%]', ''))
+            local formatArgs = {}
 
-        local text
-        if #formatArgs > 0 then
-            text = string.format(formatStr, table.unpack(formatArgs))
+            for j = 1, numSpecifiers do
+                table.insert(formatArgs, args[i + j])
+            end
+
+            local formatted = (#formatArgs > 0) and string.format(v, table.unpack(formatArgs)) or v
+            table.insert(output, currentColor..currentStyles..formatted..reset)
+
+            i = i + 1 + #formatArgs
         else
-            text = formatStr
+            -- Fallback, just tostring()
+            table.insert(output, currentColor..currentStyles..tostring(v)..reset)
+            i = i + 1
         end
-
-        local prefix = ''
-        if IsColor(color) then
-            ---@diagnostic disable-next-line: param-type-mismatch
-            prefix = ToANSI(color)
-        elseif type(color) == 'string' then
-            prefix = color
-        end
-
-        local style_codes = ToANSIStyles(styles)
-        io.write(prefix .. style_codes .. text .. ResetANSI() .. '\n')
-        return
     end
 
-    if styles ~= nil and type(styles) ~= 'table' then
-        styles = nil
-    end
-
-    local prefix = ''
-    if IsColor(color) then
-    ---@diagnostic disable-next-line: param-type-mismatch
-        prefix = ToANSI(color)
-    elseif type(color) == 'string' then
-        prefix = color
-    else
-        prefix = ''
-    end
-
-    local style_codes = ToANSIStyles(styles)
-    local text
-    if select('#', ...) > 0 then
-        text = string.format(txt or '', ...)
-    else
-        text = txt or ''
-    end
-
-    -- Compose and print, reset styles after
-    io.write(prefix..style_codes..text..ResetANSI()..'\n')
+    io.write(table.concat(output)..'\n')
 end
 
 return {
